@@ -33,8 +33,10 @@ executable postgrest
                      , hasql
                      , hasql-pool
                      , postgrest
+                     , postgrest-ws >= 0.4
                      , protolude
                      , text
+                     , time
                      , warp
                      , bytestring
                      , base64-bytestring
@@ -145,7 +147,7 @@ Test-Suite spec
                      , hasql
                      , hasql-pool
                      , heredoc
-                     , hjsonschema == 1.5.0.1
+                     , hjsonschema >= 1.6
                      , hspec
                      , hspec-wai >= 0.7.0
                      , hspec-wai-json

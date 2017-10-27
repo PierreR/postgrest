@@ -7,10 +7,14 @@ import           PostgREST.App            (postgrest)
 import           PostgREST.Config         (AppConfig (..),
                                            minimumPgVersion,
                                            prettyVersion, readOptions)
-import           PostgREST.DbStructure    (getDbStructure, getPgVersion)
+import           PostgREST.DbStructure    (getDbStructure,
+                                           getPgVersion)
 import           PostgREST.Error          (encodeError)
 import           PostgREST.OpenAPI        (isMalformedProxyUri)
-import           PostgREST.Types          (DbStructure, Schema, PgVersion(..))
+import           PostgREST.Types          (DbStructure,
+                                           PgVersion (..), Schema)
+import           PostgRESTWS              (newHasqlBroadcaster,
+                                           postgrestWsMiddleware)
 import           Protolude                hiding (hPutStrLn, replace)
 
 import           Control.Retry            (RetryStatus, capDelay,
@@ -20,10 +24,13 @@ import qualified Data.ByteString          as BS
 import qualified Data.ByteString.Base64   as B64
 import           Data.IORef               (IORef, atomicWriteIORef,
                                            newIORef, readIORef)
+import           Data.Maybe               (fromJust)
 import           Data.String              (IsString (..))
-import           Data.Text                (pack, replace, stripPrefix, strip)
+import           Data.Text                (pack, replace, strip,
+                                           stripPrefix)
 import           Data.Text.Encoding       (decodeUtf8, encodeUtf8)
 import           Data.Text.IO             (hPutStrLn)
+import           Data.Time.Clock.POSIX    (getPOSIXTime)
 import qualified Hasql.Pool               as P
 import qualified Hasql.Session            as H
 import           Network.Wai.Handler.Warp (defaultSettings,
@@ -200,10 +207,12 @@ main = do
     ) Nothing
 #endif
 
+  ws_broadcaster <- newHasqlBroadcaster pgSettings
   --
   -- run the postgrest application
-  runSettings appSettings $
-    postgrest
+  runSettings appSettings
+    $ postgrestWsMiddleware Nothing (fromJust $ configJwtSecret conf) getPOSIXTime pool ws_broadcaster
+    $ postgrest
       conf
       refDbStructure
       pool
